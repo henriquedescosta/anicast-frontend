@@ -1,49 +1,93 @@
 <template>
   <q-page class="row items-center justify-evenly">
-    <example-component
-      title="Example component"
-      active
-      :todos="todos"
-      :meta="meta"
-    ></example-component>
+    <div class="col-0 col-md-6 flex justify-end content-center">
+      <img
+        src="~assets/konata png.png"
+        class="responsive"
+        alt="login-image"
+        style="max-height: 500px"
+      />
+    </div>
+    <div class="col-0 col-md-6 flex justify-center content-center">
+      <q-card
+        v-bind:style="$q.screen.lt.sm ? { width: '80%' } : { width: '50%' }"
+      >
+        <q-card-section>
+          <q-avatar size="103px" class="absolute-center shadow-10">
+            <img src="~assets/arte konata.jpg" alt="avatar" />
+          </q-avatar>
+        </q-card-section>
+        <q-card-section>
+          <div class="q-pt-lg">
+            <div class="col text-h6 ellipsis flex justify-center">
+              <h2 class="text-h2 text-uppercase q-my-none text-weight-regular">
+                Login
+              </h2>
+            </div>
+          </div>
+        </q-card-section>
+        <q-card-section>
+          <q-form class="q-gutter-md">
+            <div class="text-center">
+              <q-btn
+                type="a"
+                :href="malUrl.url"
+                color="primary"
+                label="Logar com MAL"
+              />
+              <div class="text-center q-mt-sm q-gutter-lg">
+                <router-link class="text-white" to="/login"
+                  >Dúvidas?</router-link
+                >
+              </div>
+            </div>
+          </q-form>
+        </q-card-section>
+      </q-card>
+    </div>
   </q-page>
 </template>
 
 <script lang="ts">
-import { Todo, Meta } from 'components/models';
-import ExampleComponent from 'components/ExampleComponent.vue';
-import { defineComponent, ref } from 'vue';
+import { defineStore } from 'pinia';
+import { defineComponent, onBeforeUnmount, ref } from 'vue';
+
+export const loginPageStoreName = 'loginPage';
+export const useLoginPageStore = defineStore(loginPageStoreName, {
+  state: () => ({}),
+  actions: {
+    forget() {
+      console.log('forget: not implemented yet');
+    },
+    async malUrl() {
+      const store = useLoginPageStore();
+      const { data }: any = await store.$malApi.malControllerOAuth();
+
+      return data;
+      //appStore.token = data.accessToken;
+    },
+  },
+});
+export type LoginPageStore = ReturnType<typeof useLoginPageStore>;
 
 export default defineComponent({
   name: 'IndexPage',
-  components: { ExampleComponent },
+  components: {},
+  async mounted() {
+    const store = useLoginPageStore();
+    this.malUrl = await store.malUrl();
+    console.log(this.malUrl);
+  },
   setup() {
-    const todos = ref<Todo[]>([
-      {
-        id: 1,
-        content: 'ct1',
-      },
-      {
-        id: 2,
-        content: 'ct2',
-      },
-      {
-        id: 3,
-        content: 'ct3',
-      },
-      {
-        id: 4,
-        content: 'ct4',
-      },
-      {
-        id: 5,
-        content: 'ct5',
-      },
-    ]);
-    const meta = ref<Meta>({
-      totalCount: 1200,
-    });
-    return { todos, meta };
+    const store = useLoginPageStore();
+    onBeforeUnmount(() => store.$dispose());
+    //const { data }: any = await store.$malApi.malControllerOAuth();
+    //const aux = data;
+    //console.log(aux.url);
+    const malUrl = ref({ code: 'a', url: 'b' });
+    return {
+      malUrl,
+    };
   },
 });
 </script>

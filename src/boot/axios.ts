@@ -1,9 +1,12 @@
-import { boot } from 'quasar/wrappers';
 import axios, { AxiosInstance } from 'axios';
+import { boot } from 'quasar/wrappers';
+import { MalApi } from 'src/services/api';
+import { inject, InjectionKey } from 'vue';
 
-declare module '@vue/runtime-core' {
-  interface ComponentCustomProperties {
-    $axios: AxiosInstance;
+declare module 'pinia' {
+  export interface PiniaCustomProperties {
+    $api: AxiosInstance;
+    $malApi: MalApi;
   }
 }
 
@@ -13,18 +16,26 @@ declare module '@vue/runtime-core' {
 // good idea to move this instance creation inside of the
 // "export default () => {}" function below (which runs individually
 // for each client)
-const api = axios.create({ baseURL: 'https://api.example.com' });
-
-export default boot(({ app }) => {
+export const apiKey: InjectionKey<AxiosInstance> = Symbol('api-key');
+export const malApiKey: InjectionKey<MalApi> = Symbol('mal-api-key');
+export function useApi() {
+  return {
+    api: inject(apiKey),
+    malApi: inject(malApiKey),
+  };
+}
+export default boot(async ({ app, store }) => {
   // for use inside Vue files (Options API) through this.$axios and this.$api
+  const url = 'http://localhost:3000';
+  const api = axios.create({ baseURL: url }) as never;
 
-  app.config.globalProperties.$axios = axios;
-  // ^ ^ ^ this will allow you to use this.$axios (for Vue Options API form)
-  //       so you won't necessarily have to import axios in each vue file
+  const malApi = new MalApi(undefined, url, api);
 
-  app.config.globalProperties.$api = api;
-  // ^ ^ ^ this will allow you to use this.$api (for Vue Options API form)
-  //       so you can easily perform requests against your app's API
+  app.provide(apiKey, api);
+  app.provide(malApiKey, malApi);
+
+  store.use(() => ({
+    $api: api,
+    $malApi: malApi,
+  }));
 });
-
-export { api };
